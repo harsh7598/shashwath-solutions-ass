@@ -1,33 +1,54 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 export default function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
   const router = useRouter();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const res = await axios.post("http://localhost:5000/login", form);
-      localStorage.setItem("token", res.data.token);
-      alert("Login successful");
-      router.push("/dashboard");
+      const res = await axios.post('http://localhost:5000/auth/login', form);
+      alert(res.data.message);
+      router.push('/dashboard'); // redirect on success
     } catch (err) {
-      alert("Login failed: " + err.response?.data?.message || err.message);
+      console.error(err);
+      setError(err.response?.data?.message || 'Something went wrong');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-xl font-bold text-center mb-4">Login</h2>
-        <input className="input" name="email" type="email" placeholder="Email" onChange={handleChange} required />
-        <input className="input" name="password" type="password" placeholder="Password" onChange={handleChange} required />
-        <button className="btn mt-4">Login</button>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <form onSubmit={handleSubmit} className="bg-white p-8 shadow-md rounded w-96">
+        <h1 className="text-xl mb-4">Login</h1>
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full p-2 mb-4 border rounded"
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full p-2 mb-4 border rounded"
+        />
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
+          Login
+        </button>
       </form>
     </div>
   );

@@ -1,76 +1,47 @@
-"use client";
-import { useEffect, useState } from "react";
-import axios from "axios";
-import SeatGrid from "@/components/SeatGrid";
+'use client';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function Dashboard() {
-  const [seats, setSeats] = useState([]);
-  const [selectedSeats, setSelectedSeats] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [trains, setTrains] = useState([]);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-  // Fetch seats from backend
   useEffect(() => {
-    const fetchSeats = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/seats", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSeats(res.data.seats);
-      } catch (err) {
-        alert("Failed to fetch seats");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSeats();
+    // Fetch trains on mount
+    axios.get('http://localhost:5000/trains')
+      .then(res => setTrains(res.data))
+      .catch(err => console.error(err));
   }, []);
 
-  // Toggle seat selection
-  const handleSeatClick = (seatId) => {
-    if (selectedSeats.includes(seatId)) {
-      setSelectedSeats((prev) => prev.filter((id) => id !== seatId));
-    } else if (selectedSeats.length < 7) {
-      setSelectedSeats((prev) => [...prev, seatId]);
-    } else {
-      alert("You can only book up to 7 seats at once.");
-    }
-  };
-
-  const handleBooking = async () => {
-    if (selectedSeats.length === 0) return;
-
-    try {
-      await axios.post(
-        "http://localhost:5000/book",
-        { seatIds: selectedSeats },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Seats booked successfully!");
-      window.location.reload();
-    } catch (err) {
-      alert("Booking failed: " + err.response?.data?.message || err.message);
-    }
+  const handleSelectTrain = (trainId) => {
+    router.push(`/seat-selection?trainId=${trainId}`);
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Train Seat Booking</h1>
-      {loading ? (
-        <p>Loading...</p>
+    <div className="min-h-screen p-8 bg-gray-100">
+      <h1 className="text-2xl mb-6 font-semibold">Available Trains</h1>
+      {trains.length === 0 ? (
+        <p>Loading trains...</p>
       ) : (
-        <SeatGrid
-          seats={seats}
-          selectedSeats={selectedSeats}
-          onSeatClick={handleSeatClick}
-        />
+        <div className="grid gap-4">
+          {trains.map((train) => (
+            <div key={train.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-medium">{train.name}</h2>
+                <p>From: {train.source} - To: {train.destination}</p>
+                <p>Date: {train.date} | Time: {train.time}</p>
+              </div>
+              <button
+                onClick={() => handleSelectTrain(train.id)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Select Seats
+              </button>
+            </div>
+          ))}
+        </div>
       )}
-      <div className="mt-4">
-        <button
-          onClick={handleBooking}
-          className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={selectedSeats.length === 0}
-        >
-          Book Selected Seats
-        </button
+    </div>
+  );
+}
